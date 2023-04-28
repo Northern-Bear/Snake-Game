@@ -1,4 +1,5 @@
 import pygame
+import random
 
 # Colors
 WHITE = (255, 255, 255)
@@ -11,6 +12,10 @@ snake_width = 20
 snake_height = 20
 # space between each snake segment
 segment_margin = 3
+# Height and width of food sprite
+food_width = 15
+food_height = 15
+
 
 class Snake(pygame.sprite.Sprite):
     """ Player controlled Snake class """
@@ -18,7 +23,7 @@ class Snake(pygame.sprite.Sprite):
     # ---- Methods ----#
     def __init__(self, x, y) -> None:
         """ Constructor Method """
-        pygame.sprite.Sprite.__init__(self)
+        super().__init__()
 
         # Set the height and width of snake 
         self.image = pygame.Surface([snake_width, snake_height])
@@ -54,19 +59,40 @@ class Snake(pygame.sprite.Sprite):
         self.rect.x += self.change_x
         self.rect.y += self.change_y
 
+class Food(pygame.sprite.Sprite):
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.image = pygame.Surface([food_width, food_height])
+        self.image.fill(WHITE)
+
+        self.rect = self.image.get_rect()
+        self.rect.x = random.randrange(0, SCREEN_WIDTH - food_width)
+        self.rect.y = random.randrange(0, SCREEN_HEIGHT - food_height)
+
 def main():
     # Initialize pygame
     pygame.init()
+
+    # Game variables
+    score = 0
 
     # Create an 800x600 sized screen
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     # Set the title of the window
     pygame.display.set_caption("Snake by Northern Bear")
 
+    # Create Groups for sprites
+    food_list = pygame.sprite.Group()
+    all_sprites_list = pygame.sprite.Group()
+
     # Create a snake instance and add to snake group
-    snake = Snake(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
-    snake_list = pygame.sprite.Group()
-    snake_list.add(snake)
+    snake = Snake(SCREEN_WIDTH // 2 - 10, SCREEN_HEIGHT // 2)
+    all_sprites_list.add(snake)
+
+    food = Food()
+    food_list.add(food)
+    all_sprites_list.add(food)
 
     clock = pygame.time.Clock()
     done = False
@@ -88,13 +114,21 @@ def main():
                     snake.change_direction("down")
 
         """ -----Game Logic----- """
-        snake_list.update()
+        snake.update()
+
+        # See if the snake object has collided with food object.
+        blocks_hit_list = pygame.sprite.spritecollide(snake, food_list, True)
+    
+        # Check the list of collisions.
+        for block in blocks_hit_list:
+            score += 1
+            print(score)
 
         """ -----Drawing Code----- """
         # Clear the screen
         screen.fill(BLACK)
         # Draw sprites
-        snake_list.draw(screen)
+        all_sprites_list.draw(screen)
         # Flip the screen
         pygame.display.flip()
 
