@@ -21,7 +21,30 @@ class Snake(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()    
 
         self.rect.x = x
-        self.rect.y = y  
+        self.rect.y = y
+
+        self.change_x = 0
+        self.change_y = 0
+
+    def change_direction(self, dir):
+        match dir:
+            case "left":
+                self.change_x = (snake_width + segment_margin) * -1
+                self.change_y = 0
+            case "right":
+                self.change_x = (snake_width + segment_margin)
+                self.change_y = 0
+            case "up":
+                self.change_x = 0
+                self.change_y = (snake_height + segment_margin) * -1
+            case "down":
+                self.change_x = 0
+                self.change_y = (snake_height + segment_margin)
+ 
+    def update(self):
+        """ Find a new position for the player"""
+        self.rect.x += self.change_x
+        self.rect.y += self.change_y
 
 def main():
     pygame.init()
@@ -40,6 +63,17 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 done = True
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_a:
+                    snake.change_direction("left")
+                elif event.key == pygame.K_d:
+                    snake.change_direction("right")
+                elif event.key == pygame.K_w:
+                    snake.change_direction("up")
+                elif event.key == pygame.K_s:
+                    snake.change_direction("down")
+
+        snake_list.update()                    
 
         screen.fill(BLACK)
 
