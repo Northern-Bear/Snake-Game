@@ -11,11 +11,10 @@ SCREEN_HEIGHT = 600
 snake_width = 20
 snake_height = 20
 # space between each snake segment
-segment_margin = 3
+segment_margin = 1
 # Height and width of food sprite
 food_width = 15
 food_height = 15
-
 
 class Snake(pygame.sprite.Sprite):
     """ Player controlled Snake class """
@@ -42,24 +41,44 @@ class Snake(pygame.sprite.Sprite):
         # Changes the player direction
         match dir:
             case "left":
-                self.change_x = (snake_width + segment_margin) * -1
+                self.change_x = (snake_width) * -1
                 self.change_y = 0
             case "right":
-                self.change_x = (snake_width + segment_margin)
+                self.change_x = (snake_width)
                 self.change_y = 0
             case "up":
                 self.change_x = 0
-                self.change_y = (snake_height + segment_margin) * -1
+                self.change_y = (snake_height) * -1
             case "down":
                 self.change_x = 0
-                self.change_y = (snake_height + segment_margin)
+                self.change_y = (snake_height)
  
     def update(self):
         # Add the movement to the snake position
         self.rect.x += self.change_x
         self.rect.y += self.change_y
+        print(self.rect.x, self.rect.y)
+
+    def check_collision(self, food, collision_group, segment_list, draw_group):
+
+        blocks_hit_list = pygame.sprite.spritecollide(self, collision_group, True)
+    
+        # Check the list of collisions.
+        for block in blocks_hit_list:
+
+            # Create new snake segment
+            segment = Snake(self.rect.x, self.rect.y)
+            segment_list.append(segment)
+            draw_group.add(segment)
+
+            food.change_pos()
+            collision_group.add(food)
+            draw_group.add(food)
 
 class Food(pygame.sprite.Sprite):
+    """ Food class """
+
+    # ---- Methods ---- #
     def __init__(self) -> None:
         super().__init__()
 
@@ -67,8 +86,13 @@ class Food(pygame.sprite.Sprite):
         self.image.fill(WHITE)
 
         self.rect = self.image.get_rect()
-        self.rect.x = random.randrange(0, SCREEN_WIDTH - food_width)
-        self.rect.y = random.randrange(0, SCREEN_HEIGHT - food_height)
+        self.rect.x = 100
+        self.rect.y = 200
+    
+    def change_pos(self):
+        self.rect.x = random.randrange(0, SCREEN_WIDTH, snake_width)
+        self.rect.y = random.randrange(0, SCREEN_HEIGHT, snake_height)
+        print(self.rect.x, self.rect.y)
 
 def main():
     # Initialize pygame
@@ -87,7 +111,7 @@ def main():
     all_sprites_list = pygame.sprite.Group()
 
     # Create a snake instance and add to draw group
-    snake = Snake(SCREEN_WIDTH // 2 - 10, SCREEN_HEIGHT // 2)
+    snake = Snake(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
     all_sprites_list.add(snake)
     # Empty list to hold size of snake
     snake_segments = []
@@ -121,19 +145,7 @@ def main():
         snake.update()
 
         # See if the snake object has collided with food object.
-        blocks_hit_list = pygame.sprite.spritecollide(snake, food_list, True)
-    
-        # Check the list of collisions.
-        for block in blocks_hit_list:
-            score += 1
-            print(score)
-
-            # Create new snake segment
-            segment = Snake(snake.rect.x, snake.rect.y)
-            snake_segments.append(segment)
-            all_sprites_list.add(segment)
-
-            #print(snake_segments)
+        snake.check_collision( food, food_list, snake_segments, all_sprites_list)
 
         # Check if there is more than 1 segment
         if len(snake_segments) > 1:
@@ -143,8 +155,8 @@ def main():
             all_sprites_list.remove(old_segment)
 
             # determine where to create new segment
-            segment_x = snake_segments[0].rect.x + snake.change_x
-            segment_y = snake_segments[0].rect.y + snake.change_y
+            segment_x = snake_segments[0].rect.x + (snake.change_x)
+            segment_y = snake_segments[0].rect.y + (snake.change_y)
             segment = Snake(segment_x, segment_y)
 
             # Add to list
@@ -154,8 +166,16 @@ def main():
         """ -----Drawing Code----- """
         # Clear the screen
         screen.fill(BLACK)
+
         # Draw sprites
         all_sprites_list.draw(screen)
+
+        for i in range(0, SCREEN_WIDTH - 1, snake_width):
+            for j in range(0, SCREEN_HEIGHT - 1, snake_height):
+                pygame.draw.rect(screen, WHITE, [i,  j, snake_width, snake_height], 1)
+                
+            
+
         # Flip the screen
         pygame.display.flip()
 
