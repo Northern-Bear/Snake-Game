@@ -135,14 +135,19 @@ def main():
 
             #print(snake_segments)
 
+        # Check if there is more than 1 segment
         if len(snake_segments) > 1:
+
+            # Remove last segment
             old_segment = snake_segments.pop()
             all_sprites_list.remove(old_segment)
 
+            # determine where to create new segment
             segment_x = snake_segments[0].rect.x + snake.change_x
             segment_y = snake_segments[0].rect.y + snake.change_y
             segment = Snake(segment_x, segment_y)
 
+            # Add to list
             snake_segments.insert(0, segment)
             all_sprites_list.add(segment)
 
