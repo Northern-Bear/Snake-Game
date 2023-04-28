@@ -86,10 +86,14 @@ def main():
     food_list = pygame.sprite.Group()
     all_sprites_list = pygame.sprite.Group()
 
-    # Create a snake instance and add to snake group
+    # Create a snake instance and add to draw group
     snake = Snake(SCREEN_WIDTH // 2 - 10, SCREEN_HEIGHT // 2)
     all_sprites_list.add(snake)
+    # Empty list to hold size of snake
+    snake_segments = []
+    snake_segments.append(snake)
 
+    # Create food object and add to food group and draw group
     food = Food()
     food_list.add(food)
     all_sprites_list.add(food)
@@ -123,6 +127,24 @@ def main():
         for block in blocks_hit_list:
             score += 1
             print(score)
+
+            # Create new snake segment
+            segment = Snake(snake.rect.x, snake.rect.y)
+            snake_segments.append(segment)
+            all_sprites_list.add(segment)
+
+            #print(snake_segments)
+
+        if len(snake_segments) > 1:
+            old_segment = snake_segments.pop()
+            all_sprites_list.remove(old_segment)
+
+            segment_x = snake_segments[0].rect.x + snake.change_x
+            segment_y = snake_segments[0].rect.y + snake.change_y
+            segment = Snake(segment_x, segment_y)
+
+            snake_segments.insert(0, segment)
+            all_sprites_list.add(segment)
 
         """ -----Drawing Code----- """
         # Clear the screen
