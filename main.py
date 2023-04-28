@@ -57,7 +57,7 @@ class Snake(pygame.sprite.Sprite):
         # Add the movement to the snake position
         self.rect.x += self.change_x
         self.rect.y += self.change_y
-        print(self.rect.x, self.rect.y)
+        
 
     def check_collision(self, food, collision_group, segment_list, draw_group):
 
@@ -74,6 +74,7 @@ class Snake(pygame.sprite.Sprite):
             food.change_pos()
             collision_group.add(food)
             draw_group.add(food)
+        print(self.rect.x, self.rect.y)
 
 class Food(pygame.sprite.Sprite):
     """ Food class """
@@ -82,7 +83,7 @@ class Food(pygame.sprite.Sprite):
     def __init__(self) -> None:
         super().__init__()
 
-        self.image = pygame.Surface([food_width, food_height])
+        self.image = pygame.Surface([food_width -5, food_height -5])
         self.image.fill(WHITE)
 
         self.rect = self.image.get_rect()
@@ -92,7 +93,7 @@ class Food(pygame.sprite.Sprite):
     def change_pos(self):
         self.rect.x = random.randrange(0, SCREEN_WIDTH, snake_width)
         self.rect.y = random.randrange(0, SCREEN_HEIGHT, snake_height)
-        print(self.rect.x, self.rect.y)
+        
 
 def main():
     # Initialize pygame
@@ -162,6 +163,8 @@ def main():
             # Add to list
             snake_segments.insert(0, segment)
             all_sprites_list.add(segment)
+            snake.rect.x = snake_segments[0].rect.x
+            snake.rect.y = snake_segments[0].rect.y
 
         """ -----Drawing Code----- """
         # Clear the screen
