@@ -13,9 +13,21 @@ CELL_HEIGHT = 20
 
 # space between each snake segment
 segment_margin = 1
-# Height and width of food sprite
-food_width = 15
-food_height = 15
+
+class PlayArea(pygame.sprite.Sprite):
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.area_width = 600
+        self.area_height = 600
+
+        self.image = pygame.Surface([self.area_width, self.area_height])
+        self.image.fill(BLACK)
+
+        self.rect = self.image.get_rect()
+        self.rect.x = 200
+        self.rect.y = 0
+
 
 class Snake(pygame.sprite.Sprite):
     """ Player controlled Snake class """
@@ -62,24 +74,7 @@ class Snake(pygame.sprite.Sprite):
         # Add the movement to the snake position
         self.rect.x += self.change_x
         self.rect.y += self.change_y
-        
 
-    def check_collision(self, food, collision_group, segment_list, draw_group):
-
-        blocks_hit_list = pygame.sprite.spritecollide(self, collision_group, True)
-    
-        # Check the list of collisions.
-        for block in blocks_hit_list:
-
-            # Create new snake segment
-            segment = Snake(self.rect.x, self.rect.y)
-            segment_list.append(segment)
-            draw_group.add(segment)
-
-            food.change_pos()
-            collision_group.add(food)
-            draw_group.add(food)
-    
 
 class Food(pygame.sprite.Sprite):
     """ Food class """
@@ -89,17 +84,25 @@ class Food(pygame.sprite.Sprite):
         """ Constructor Method """
         super().__init__()
 
-        self.image = pygame.Surface([food_width, food_height])
+        self.screen = PlayArea()
+
+        # Height and width of food sprite
+        self.food_width = 15
+        self.food_height = 15
+
+        self.image = pygame.Surface([self.food_width, self.food_height])
         self.image.fill(WHITE)
 
+        # Position of food object
         self.rect = self.image.get_rect()
-        self.rect.x = 100
+        self.rect.x = 240
         self.rect.y = 200
     
     def change_pos(self):
         # Changes the pos of food before drawring again.
-        self.rect.x = random.randrange(0, SCREEN_WIDTH, CELL_WIDTH)
-        self.rect.y = random.randrange(0, SCREEN_HEIGHT, CELL_HEIGHT)
+        self.rect.x = random.randrange(self.screen.rect.x, self.screen.area_width - self.food_width, CELL_WIDTH)
+        self.rect.y = random.randrange(self.screen.rect.y, self.screen.area_height - self.food_height, CELL_HEIGHT)
+
 
 class Game(object):
     def __init__(self) -> None:
@@ -111,8 +114,10 @@ class Game(object):
         # Create Groups for sprites
         self.food_list = pygame.sprite.Group()
         self.all_sprites_list = pygame.sprite.Group()
+        # create play area
+        self.play_area = PlayArea()
         # Create a snake instance and add to draw group
-        self.snake = Snake(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+        self.snake = Snake(self.play_area.area_width // 2, self.play_area.area_height // 2)
         self.all_sprites_list.add(self.snake)
         # Empty list to hold size of snake
         self.snake_segments = []
@@ -121,6 +126,11 @@ class Game(object):
         self.food = Food()
         self.food_list.add(self.food)
         self.all_sprites_list.add(self.food)
+        # Select the font to use, size, bold, italics
+        self.font = pygame.font.SysFont('Calibri', 25, True, False)
+        self.title_text = self.font.render("-- SNAKE --", True, WHITE)
+        self.game_over_text = self.font.render(" Game Over. Please press 'r' to restart ", True, WHITE)
+        
 
     def process_events(self):
         for event in pygame.event.get():
@@ -136,6 +146,10 @@ class Game(object):
                     self.snake.change_direction("up")
                 elif event.key == pygame.K_s:
                     self.snake.change_direction("down")
+                
+                if self.game_over:
+                    if event.key == pygame.K_r:
+                        self.__init__()
 
     def run_logic(self):
             
@@ -144,8 +158,7 @@ class Game(object):
                 self.snake.update()
 
                 # See if the snake object has collided with food object.
-                self.snake.check_collision( self.food, self.food_list, self.snake_segments, self.all_sprites_list)
-
+                self.check_collision()
                 # Check if there is more than 1 segment
                 if len(self.snake_segments) > 1:
 
@@ -164,17 +177,50 @@ class Game(object):
                     self.snake.rect.x = self.snake_segments[0].rect.x
                     self.snake.rect.y = self.snake_segments[0].rect.y
 
+                if self.snake.rect.x < self.play_area.rect.x or self.snake.rect.x > self.play_area.rect.x + self.play_area.area_width:
+                    self.game_over = True
+                elif self.snake.rect.y < self.play_area.rect.y or self.snake.rect.y > self.play_area.rect.y + self.play_area.area_height:
+                    self.game_over = True
+                else:
+                    self.game_over = False
+    
+    def check_collision(self):
+
+        blocks_hit_list = pygame.sprite.spritecollide(self.snake, self.food_list, True)
+    
+        # Check the list of collisions.
+        for block in blocks_hit_list:
+            self.score += 1
+
+            # Create new snake segment
+            segment = Snake(self.snake.rect.x, self.snake.rect.y)
+            self.snake_segments.append(segment)
+            self.all_sprites_list.add(segment)
+
+            self.food.change_pos()
+            self.food_list.add(self.food)
+            self.all_sprites_list.add(self.food)
+
+            print(self.score)
+
     def display_frame(self, screen):
         # Clear the screen
         screen.fill(BLACK)
 
+        self.score_text = self.font.render("Score: " + str(self.score), True, WHITE)
+
+        if self.game_over:
+
+            screen.blit(self.game_over_text, [200, 240])
+
         # Draw sprites
         if not self.game_over:
+
+            screen.blit(self.title_text, [40, 5])
+            screen.blit(self.score_text, [5, 30])
             self.all_sprites_list.draw(screen)
 
-            for i in range(0, SCREEN_WIDTH - 1, CELL_WIDTH):
-                for j in range(0, SCREEN_HEIGHT - 1, CELL_HEIGHT):
-                    pygame.draw.rect(screen, WHITE, [i,  j, CELL_WIDTH, CELL_HEIGHT], 1)
+            pygame.draw.rect(screen, WHITE, [self.play_area.rect.x,  self.play_area.rect.y, self.play_area.area_width, self.play_area.area_height], 1)
                 
         # Flip the screen
         pygame.display.flip()
